@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>数据管理 · AquaVision</title>
+    <link rel="stylesheet" href="./static/css/style.css">
+</head>
+<body>
+    <div class="topbar">
+        <div class="topbar-left">
+            <a href="./index.html" class="topbar-brand"><span class="logo-icon">🐟</span>渔瞳 · AquaVision</a>
+            <div class="topbar-nav" id="nav-links">
+                <a href="./index.html">首页</a><a href="./dashboard.html">仪表盘</a><a href="./models.html">模型管理</a><a href="./wqi.html">WQI分析</a><a href="./alerts.html">告警中心</a><a href="./data.html" class="active">数据管理</a>
+            </div>
+        </div>
+        <div class="topbar-right"><button class="topbar-btn" onclick="toggleTheme()">🌓</button></div>
+    </div>
+
+    <div class="dashboard">
+        <div class="header">
+            <div class="header-left"><h1>📁 数据管理</h1><span class="subtitle">导入 · 导出 · 数据预览</span></div>
+            <div class="header-right">
+                <button class="btn-primary" onclick="exportDataPage()">📤 导出 CSV</button>
+            </div>
+        </div>
+
+        <div class="data-stats">
+            <div class="stat-card"><div class="stat-body"><div class="stat-value" id="ds-total">--</div><div class="stat-label">总记录数</div></div></div>
+            <div class="stat-card"><div class="stat-body"><div class="stat-value" id="ds-start">--</div><div class="stat-label">最早日期</div></div></div>
+            <div class="stat-card"><div class="stat-body"><div class="stat-value" id="ds-end">--</div><div class="stat-label">最新日期</div></div></div>
+            <div class="stat-card"><div class="stat-body"><div class="stat-value" id="ds-complete">--</div><div class="stat-label">数据完整率</div></div></div>
+        </div>
+
+        <div class="data-upload-zone" id="upload-zone" onclick="document.getElementById('file-input').click()">
+            <div class="upload-icon">📂</div>
+            <div class="upload-text">点击或拖拽 CSV 文件到此处上传</div>
+            <div class="upload-hint">支持 .csv 格式，自动识别水质参数列</div>
+            <input type="file" id="file-input" accept=".csv" style="display:none;" onchange="handleFileUpload(event)">
+        </div>
+
+        <div style="padding:20px;margin-bottom:20px;">
+            <div class="card-header">
+                <span>📋 数据预览 (最近 50 条)</span>
+                <button class="chip" onclick="loadDataPreview()">🔄 刷新</button>
+            </div>
+            <div class="data-table-wrap">
+                <table class="data-table" id="data-table">
+                    <thead id="data-table-head"></thead>
+                    <tbody id="data-table-body">
+                        <tr><td colspan="10" style="text-align:center;color:var(--text-muted);padding:40px;">加载中...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script src="./static/js/mock-api.js"></script>
+    <script src="./static/js/components/toast.js"></script>
+    <script src="./static/js/pages/data.js"></script>
+    <script>
+    window.toggleTheme = function() {
+        var cur = document.documentElement.getAttribute('data-theme');
+        var next = cur === 'dark' ? '' : 'dark';
+        if (next) document.documentElement.setAttribute('data-theme', next);
+        else document.documentElement.removeAttribute('data-theme');
+        localStorage.setItem('aquavision-theme', next);
+    };
+    var zone = document.getElementById('upload-zone');
+    zone.addEventListener('dragover', function(e) { e.preventDefault(); zone.classList.add('drag-over'); });
+    zone.addEventListener('dragleave', function() { zone.classList.remove('drag-over'); });
+    zone.addEventListener('drop', function(e) { e.preventDefault(); zone.classList.remove('drag-over'); handleFiles(e.dataTransfer.files); });
+    loadDataPreview();
+    </script>
+</body>
+</html>

@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>告警中心 · AquaVision</title>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
+    <link rel="stylesheet" href="./static/css/style.css">
+</head>
+<body>
+    <div class="topbar">
+        <div class="topbar-left">
+            <a href="./index.html" class="topbar-brand"><span class="logo-icon">🐟</span>渔瞳 · AquaVision</a>
+            <div class="topbar-nav" id="nav-links">
+                <a href="./index.html">首页</a><a href="./dashboard.html">仪表盘</a><a href="./models.html">模型管理</a><a href="./wqi.html">WQI分析</a><a href="./alerts.html" class="active">告警中心</a><a href="./data.html">数据管理</a>
+            </div>
+        </div>
+        <div class="topbar-right"><button class="topbar-btn" onclick="toggleTheme()">🌓</button></div>
+    </div>
+
+    <div class="dashboard">
+        <div class="header">
+            <div class="header-left"><h1>🔔 告警中心</h1><span class="subtitle">规则配置 · 历史记录 · 实时监控</span></div>
+            <div class="header-right">
+                <button class="btn-secondary" onclick="loadAlertRules()">🔄 刷新规则</button>
+                <button class="btn-primary" onclick="ackAllAlerts()">✅ 全部确认</button>
+            </div>
+        </div>
+
+        <div class="alerts-grid">
+            <div class="alerts-rules-section">
+                <div class="card-header">⚙️ 告警规则</div>
+                <div id="rules-container">
+                    <div class="rule-row"><span class="rule-label">pH 最小值</span><input type="number" id="rule-ph-min" step="0.1"></div>
+                    <div class="rule-row"><span class="rule-label">pH 最大值</span><input type="number" id="rule-ph-max" step="0.1"></div>
+                    <div class="rule-row"><span class="rule-label">温度最小值 (℃)</span><input type="number" id="rule-temp-min" step="0.5"></div>
+                    <div class="rule-row"><span class="rule-label">温度最大值 (℃)</span><input type="number" id="rule-temp-max" step="0.5"></div>
+                    <div class="rule-row"><span class="rule-label">盐度最小值 (‰)</span><input type="number" id="rule-sal-min" step="0.5"></div>
+                    <div class="rule-row"><span class="rule-label">盐度最大值 (‰)</span><input type="number" id="rule-sal-max" step="0.5"></div>
+                    <div class="rule-row"><span class="rule-label">溶解氧最小值 (mg/L)</span><input type="number" id="rule-do-min" step="0.1"></div>
+                    <div class="rule-row"><span class="rule-label">溶解氧最大值 (mg/L)</span><input type="number" id="rule-do-max" step="0.1"></div>
+                    <div class="rule-row"><span class="rule-label">叶绿素上限 (μg/L)</span><input type="number" id="rule-chl-max" step="0.5"></div>
+                    <div class="rule-row"><span class="rule-label">浊度上限 (NTU)</span><input type="number" id="rule-turb-max" step="0.5"></div>
+                </div>
+                <button class="btn-primary" onclick="saveAlertRules()" style="width:100%;margin-top:16px;">💾 保存规则</button>
+            </div>
+
+            <div class="alerts-list-section">
+                <div class="card-header">📋 历史告警 <span style="font-weight:400;color:var(--text-muted);font-size:0.8rem;" id="alert-count"></span></div>
+                <div class="alert-feed-list" id="alert-history-list" style="max-height:500px;">
+                    <div class="alert-empty">加载中...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="./static/js/mock-api.js"></script>
+    <script src="./static/js/charts.js"></script>
+    <script src="./static/js/components/toast.js"></script>
+    <script src="./static/js/pages/alerts.js"></script>
+    <script>
+    window.toggleTheme = function() {
+        var cur = document.documentElement.getAttribute('data-theme');
+        var next = cur === 'dark' ? '' : 'dark';
+        if (next) document.documentElement.setAttribute('data-theme', next);
+        else document.documentElement.removeAttribute('data-theme');
+        localStorage.setItem('aquavision-theme', next);
+    };
+    loadAlertRules();
+    loadAlertHistory();
+    </script>
+</body>
+</html>

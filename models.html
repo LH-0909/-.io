@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>模型管理 · AquaVision</title>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
+    <link rel="stylesheet" href="./static/css/style.css">
+</head>
+<body>
+    <div class="topbar">
+        <div class="topbar-left">
+            <a href="./index.html" class="topbar-brand"><span class="logo-icon">🐟</span>渔瞳 · AquaVision</a>
+            <div class="topbar-nav" id="nav-links">
+                <a href="./index.html">首页</a><a href="./dashboard.html">仪表盘</a><a href="./models.html" class="active">模型管理</a><a href="./wqi.html">WQI分析</a><a href="./alerts.html">告警中心</a><a href="./data.html">数据管理</a>
+            </div>
+        </div>
+        <div class="topbar-right">
+            <button class="topbar-btn" onclick="toggleTheme()">🌓</button>
+        </div>
+    </div>
+
+    <div class="dashboard">
+        <div class="header">
+            <div class="header-left"><h1>🧠 模型管理</h1><span class="subtitle">溶解氧预测模型 · 训练 · 评估 · 特征分析</span></div>
+            <div class="header-right"><div class="status-badge healthy" id="model-status-badge">--</div></div>
+        </div>
+
+        <div class="model-overview">
+            <div class="card-header">📋 模型信息</div>
+            <div class="model-info-grid">
+                <div class="model-info-card"><div class="info-label">模型状态</div><div class="info-value" id="info-fitted">--</div></div>
+                <div class="model-info-card"><div class="info-label">回溯窗口</div><div class="info-value" id="info-lookback">--</div></div>
+                <div class="model-info-card"><div class="info-label">特征维度</div><div class="info-value" id="info-features">--</div></div>
+                <div class="model-info-card"><div class="info-label">元学习器</div><div class="info-value" id="info-meta">--</div></div>
+                <div class="model-info-card"><div class="info-label">模型权重</div><div class="info-value" id="info-lstm-w">--</div></div>
+                <div class="model-info-card"><div class="info-label">参数量</div><div class="info-value" id="info-lstm-p">--</div></div>
+            </div>
+        </div>
+
+        <div class="model-overview" id="metrics-section" style="display:none;">
+            <div class="card-header">📊 训练指标</div>
+            <div class="model-info-grid">
+                <div class="model-info-card"><div class="info-label">MAE</div><div class="info-value highlight" id="metric-mae">--</div></div>
+                <div class="model-info-card"><div class="info-label">RMSE</div><div class="info-value highlight" id="metric-rmse">--</div></div>
+                <div class="model-info-card"><div class="info-label">R²</div><div class="info-value highlight" id="metric-r2">--</div></div>
+                <div class="model-info-card"><div class="info-label">MAPE</div><div class="info-value highlight" id="metric-mape">--</div></div>
+            </div>
+        </div>
+
+        <div class="trend-card" style="margin-bottom:18px;">
+            <div class="card-header">📈 特征重要性 (XGBoost)</div>
+            <div id="importance-chart" style="width:100%;height:400px;"></div>
+        </div>
+
+        <div class="actions-row">
+            <button class="btn-primary" id="btn-train" onclick="trainModelPage()">🧠 训练模型</button>
+            <button class="btn-secondary" onclick="loadModelInfo()">🔄 刷新信息</button>
+            <button class="btn-secondary" onclick="loadImportance()">📊 特征分析</button>
+        </div>
+        <div class="train-status" id="train-status"></div>
+    </div>
+
+    <script src="./static/js/mock-api.js"></script>
+    <script src="./static/js/charts.js"></script>
+    <script src="./static/js/components/toast.js"></script>
+    <script>
+    window.toggleTheme = function() {
+        var cur = document.documentElement.getAttribute('data-theme');
+        var next = cur === 'dark' ? '' : 'dark';
+        if (next) document.documentElement.setAttribute('data-theme', next);
+        else document.documentElement.removeAttribute('data-theme');
+        localStorage.setItem('aquavision-theme', next);
+    };
+    function loadModelInfo() {
+        ApiClient.get('/api/model/info').then(function(info) {
+            document.getElementById('info-fitted').textContent = info.fitted ? '✅ 已训练' : '❌ 未训练';
+            document.getElementById('model-status-badge').textContent = info.fitted ? '● 模型就绪' : '● 未训练';
+            document.getElementById('model-status-badge').className = 'status-badge ' + (info.fitted ? 'healthy' : 'warning');
+            document.getElementById('info-lookback').textContent = info.lookback || '--';
+            document.getElementById('info-features').textContent = (info.feature_columns || []).length || '--';
+            document.getElementById('info-meta').textContent = info.has_meta_model ? '✅ Stacking' : '⚠ 单权重';
+            document.getElementById('info-lstm-w').textContent = info.lstm_weight != null ? info.lstm_weight.toFixed(3) : '--';
+            document.getElementById('info-lstm-p').textContent = info.lstm_params || '--';
+        }).catch(function() {
+            document.getElementById('info-fitted').textContent = '❌ 未训练';
+            document.getElementById('model-status-badge').className = 'status-badge warning';
+        });
+    }
+    function loadImportance() {
+        ApiClient.get('/api/model/importance').then(function(data) {
+            Charts.renderImportance('importance-chart', data);
+            Toast.success('特征重要性已加载');
+        }).catch(function(e) { Toast.error('加载失败: ' + e.message); });
+    }
+    function trainModelPage() {
+        var btn = document.getElementById('btn-train');
+        var statusEl = document.getElementById('train-status');
+        btn.disabled = true; btn.textContent = '⏳ 训练中...';
+        statusEl.innerHTML = '<div class="alert" style="border-left-color:#e67e22;">⏳ 训练中...</div>';
+        ApiClient.post('/api/train', {}).then(function(data) {
+            btn.disabled = false; btn.textContent = '🧠 训练模型';
+            var m = data.metrics || {};
+            statusEl.innerHTML = '<div class="alert" style="border-left-color:#1e8e3e;">✅ 完成！MAE: ' + (m.mae != null ? m.mae.toFixed(3) : 'N/A') + ', R²: ' + (m.r2 != null ? m.r2.toFixed(3) : 'N/A') + '</div>';
+            if (m.mae != null) {
+                document.getElementById('metrics-section').style.display = 'block';
+                document.getElementById('metric-mae').textContent = m.mae.toFixed(3);
+                document.getElementById('metric-rmse').textContent = m.rmse != null ? m.rmse.toFixed(3) : '--';
+                document.getElementById('metric-r2').textContent = m.r2 != null ? m.r2.toFixed(3) : '--';
+                document.getElementById('metric-mape').textContent = m.mape != null ? m.mape.toFixed(1) + '%' : '--';
+            }
+            loadModelInfo();
+            Toast.success('模型训练完成！');
+        }).catch(function(e) {
+            btn.disabled = false; btn.textContent = '🧠 训练模型';
+            statusEl.innerHTML = '<div class="alert" style="border-left-color:#d93025;">❌ 失败: ' + e.message + '</div>';
+            Toast.error('训练失败: ' + e.message);
+        });
+    }
+    loadModelInfo();
+    setTimeout(loadImportance, 600);
+    </script>
+</body>
+</html>
