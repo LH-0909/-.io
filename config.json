@@ -1,0 +1,13 @@
+{
+    "ph_min": 6.0,
+    "ph_max": 9.0,
+    "temp_min": 20.0,
+    "temp_max": 25.0,
+    "sal_min": 25.0,
+    "sal_max": 45.0,
+    "do_min": 5.0,
+    "do_max": 12.0,
+    "chl_max": 20.0,
+    "turb_max": 15.0,
+    "model_path": "models/do_model_latest.pkl"
+}
